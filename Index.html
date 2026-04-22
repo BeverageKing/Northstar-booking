@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Northstar Digital · Client Booking</title>
+
+  <!-- PWA / Home Screen Meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Client Booking" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0a0a0f" />
+
+  <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Northstar%20Digital%22%2C%22short_name%22%3A%22Client%20Booking%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230a0a0f%22%2C%22theme_color%22%3A%22%230a0a0f%22%7D" />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0a0a0f;
+      --surface:  #12121a;
+      --border:   #1e1e2e;
+      --accent:   #6c63ff;
+      --accent2:  #a78bfa;
+      --gold:     #f5c842;
+      --text:     #e8e8f0;
+      --muted:    #6b6b80;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Sora', sans-serif;
+      overflow: hidden;
+    }
+
+    /* ── SPLASH SCREEN ── */
+    #splash {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: var(--bg);
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bot);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    #splash.hide {
+      opacity: 0; pointer-events: none; transform: scale(1.04);
+    }
+
+    .star-icon {
+      width: 80px; height: 80px; margin-bottom: 28px;
+      position: relative;
+      animation: pulse-glow 2.5s ease-in-out infinite;
+    }
+    .star-icon svg { width: 100%; height: 100%; }
+
+    @keyframes pulse-glow {
+      0%,100% { filter: drop-shadow(0 0 12px #6c63ff88); }
+      50%      { filter: drop-shadow(0 0 28px #a78bfa99); }
+    }
+
+    #splash h1 {
+      font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #fff 30%, var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+    #splash p {
+      font-size: 0.78rem; font-weight: 400; color: var(--muted);
+      letter-spacing: 0.12em; text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .loader {
+      margin-top: 48px; width: 180px; height: 2px;
+      background: var(--border); border-radius: 99px; overflow: hidden;
+    }
+    .loader-bar {
+      height: 100%; width: 0;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 99px;
+      animation: load 1.6s cubic-bezier(.4,0,.2,1) 0.3s forwards;
+    }
+    @keyframes load { to { width: 100%; } }
+
+    /* ── MAIN APP SHELL ── */
+    #app {
+      display: none; flex-direction: column;
+      height: 100%; width: 100%;
+    }
+    #app.visible { display: flex; }
+
+    .status-bar {
+      height: calc(var(--safe-top) + 10px);
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+
+    .nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .nav-logo-mark {
+      width: 32px; height: 32px;
+    }
+    .nav-title {
+      font-size: 0.95rem; font-weight: 600;
+      background: linear-gradient(120deg, #fff 40%, var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .nav-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem; color: var(--accent2);
+      border: 1px solid var(--accent);
+      padding: 2px 8px; border-radius: 99px;
+      letter-spacing: 0.08em;
+    }
+
+    .hero {
+      margin: 20px 16px 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px 22px;
+      position: relative; overflow: hidden;
+      flex-shrink: 0;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; top: -40px; right: -40px;
+      width: 160px; height: 160px; border-radius: 50%;
+      background: radial-gradient(circle, #6c63ff22 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem; letter-spacing: 0.15em;
+      color: var(--accent2); text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .hero h2 {
+      font-size: 1.25rem; font-weight: 700; line-height: 1.3;
+      margin-bottom: 8px; letter-spacing: -0.02em;
+    }
+    .hero p {
+      font-size: 0.82rem; color: var(--muted); line-height: 1.6;
+    }
+
+    .chips {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      margin: 14px 0 0;
+    }
+    .chip {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 0.72rem; color: var(--text);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 5px 10px; border-radius: 99px;
+    }
+    .chip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+
+    .cta-wrap {
+      padding: 20px 16px 0;
+      flex-shrink: 0;
+    }
+    .cta-btn {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; padding: 17px;
+      background: linear-gradient(135deg, var(--accent) 0%, #4f46e5 100%);
+      color: #fff; font-family: 'Sora', sans-serif;
+      font-size: 1rem; font-weight: 600; letter-spacing: -0.01em;
+      border: none; border-radius: 16px; cursor: pointer;
+      box-shadow: 0 8px 32px #6c63ff44;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+      text-decoration: none;
+    }
+    .cta-btn:active {
+      transform: scale(0.97);
+      box-shadow: 0 4px 16px #6c63ff33;
+    }
+    .cta-arrow {
+      font-size: 1.1rem; transition: transform 0.2s ease;
+    }
+    .cta-btn:active .cta-arrow { transform: translateX(4px); }
+
+    .secondary-wrap {
+      padding: 12px 16px 0;
+      flex-shrink: 0;
+    }
+    .secondary-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 14px;
+      background: transparent;
+      color: var(--muted); font-family: 'Sora', sans-serif;
+      font-size: 0.85rem; font-weight: 400;
+      border: 1px solid var(--border); border-radius: 14px; cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+      text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .secondary-btn:active { border-color: var(--accent2); color: var(--text); }
+
+    .steps {
+      margin: 20px 16px 0;
+      flex-shrink: 0;
+    }
+    .steps-title {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .step-list { display: flex; flex-direction: column; gap: 12px; }
+    .step {
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .step-num {
+      width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+      background: var(--surface); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem; color: var(--accent2);
+    }
+    .step-text { font-size: 0.82rem; color: var(--muted); line-height: 1.5; padding-top: 3px; }
+    .step-text strong { color: var(--text); font-weight: 600; }
+
+    .bottom-safe {
+      flex: 1;
+      min-height: calc(var(--safe-bot) + 16px);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── SPLASH ── -->
+<div id="splash">
+  <div class="star-icon">
+    <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="sg" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#6c63ff"/>
+          <stop offset="100%" stop-color="#a78bfa"/>
+        </linearGradient>
+      </defs>
+      <polygon points="40,6 49,29 74,29 54,45 62,68 40,53 18,68 26,45 6,29 31,29"
+               fill="url(#sg)" opacity="0.15"/>
+      <polygon points="40,12 47,31 68,31 52,44 58,64 40,51 22,64 28,44 12,31 33,31"
+               stroke="url(#sg)" stroke-width="1.5" fill="none"/>
+      <circle cx="40" cy="40" r="6" fill="url(#sg)"/>
+    </svg>
+  </div>
+  <h1>Northstar Digital</h1>
+  <p>Client Booking</p>
+  <div class="loader"><div class="loader-bar"></div></div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app">
+  <div class="status-bar"></div>
+
+  <nav class="nav">
+    <div class="nav-logo">
+      <svg class="nav-logo-mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="16,2 19.5,11 30,11 21.5,17 24.5,27 16,21 7.5,27 10.5,17 2,11 12.5,11"
+                 stroke="#6c63ff" stroke-width="1.2" fill="#6c63ff22"/>
+        <circle cx="16" cy="16" r="3" fill="#a78bfa"/>
+      </svg>
+      <span class="nav-title">Northstar Digital</span>
+    </div>
+    <span class="nav-badge">LIVE</span>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-tag">📅 Client Session</div>
+    <h2>Book Client Discovery Call</h2>
+    <p>Send this link to your client or book directly on their behalf. Choose a time that works for both of you.</p>
+    <div class="chips">
+      <div class="chip"><div class="chip-dot"></div>30 minutes</div>
+      <div class="chip"><div class="chip-dot" style="background:#6c63ff"></div>Video or Phone</div>
+      <div class="chip"><div class="chip-dot" style="background:#34d399"></div>Free</div>
+    </div>
+  </div>
+
+  <div class="cta-wrap">
+    <a class="cta-btn" href="https://app.usemotion.com/meet/northstar-digital/openclaw-discussion" target="_blank" rel="noopener">
+      Book Client Discovery Call
+      <span class="cta-arrow">→</span>
+    </a>
+  </div>
+
+  <div class="secondary-wrap">
+    <a class="secondary-btn" href="https://app.usemotion.com/meet/northstar-digital/openclaw-discussion" target="_blank" rel="noopener">
+      View availability calendar
+    </a>
+  </div>
+
+  <div class="steps">
+    <div class="steps-title">How it works</div>
+    <div class="step-list">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-text"><strong>Pick a time</strong> — choose any open slot on the calendar</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-text"><strong>Confirm details</strong> — client name, email, and project overview</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-text"><strong>Connect</strong> — a focused 30-min discovery conversation</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-safe"></div>
+</div>
+
+<script>
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const splash = document.getElementById('splash');
+      const app    = document.getElementById('app');
+      splash.classList.add('hide');
+      setTimeout(() => {
+        splash.style.display = 'none';
+        app.classList.add('visible');
+      }, 520);
+    }, 1900);
+  });
+</script>
+
+</body>
+</html>
